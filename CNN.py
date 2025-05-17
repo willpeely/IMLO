@@ -87,6 +87,8 @@ class CNN(nn.Module):
         self.convolutional_layers = nn.Sequential(
             convolutional_layer(input_channels=RGB_channels, output_channels=32),
             convolutional_layer(input_channels=32, output_channels=64),
+            convolutional_layer(input_channels=64, output_channels=128),
+            convolutional_layer(input_channels=128, output_channels=256)
         )
 
         flattened_size = get_flattened_size(self.convolutional_layers)
