@@ -40,3 +40,28 @@ def convolutional_layer(input_channels, output_channels, pool=True):
         layers.append(convolutional_pool)
 
     return nn.Sequential(*layers)
+
+# fully connected variables
+fully_connected_activation = nn.ReLU()
+fully_connected_dropout = 0.5
+
+# Used to create a fully connected layer with defined input and output features
+def fully_connected_layer(input_features, output_features, dropout=True):
+    """ Returns a fully connected layer.
+
+    Args:
+        input_features (int): The number of inputs into the layer.
+        output_features (int): The number of outputs produced by the layer.
+        dropout (bool, optional): If true the fully connected layer will use dropout. Defaults to True.
+    """
+    layers = [
+        nn.Linear(
+            in_features=input_features, 
+            out_features=output_features
+        ),
+        fully_connected_activation
+    ]
+    if dropout:
+        layers.append(nn.Dropout(fully_connected_dropout))
+
+    return nn.Sequential(*layers)
