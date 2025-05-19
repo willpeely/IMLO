@@ -13,7 +13,7 @@ convolutional_activation = nn.ReLU()
 convolutional_pool = nn.MaxPool2d(kernel_size=2, stride=2)
 
 # Used to create a convolutional layer with defined input and output channels
-def convolutional_layer(input_channels, output_channels, pool=True):
+def convolutional_layer(input_channels, output_channels, pool=True, dropout=0):
     """ Returns a convolutional layer.
 
     Args:
@@ -38,12 +38,14 @@ def convolutional_layer(input_channels, output_channels, pool=True):
     ]
     if pool:
         layers.append(convolutional_pool)
+    if dropout > 0:
+        layers.append(nn.Dropout2d(dropout))
 
     return nn.Sequential(*layers)
 
 # fully connected variables
 fully_connected_activation = nn.ReLU()
-fully_connected_dropout = 0.5
+fully_connected_dropout = nn.Dropout(0.5)
 
 # Used to create a fully connected layer with defined input and output features
 def fully_connected_layer(input_features, output_features, dropout=True):
@@ -62,7 +64,7 @@ def fully_connected_layer(input_features, output_features, dropout=True):
         fully_connected_activation
     ]
     if dropout:
-        layers.append(nn.Dropout(fully_connected_dropout))
+        layers.append(fully_connected_dropout)
 
     return nn.Sequential(*layers)
 
@@ -85,17 +87,19 @@ class CNN(nn.Module):
         super(CNN, self).__init__()
 
         self.convolutional_layers = nn.Sequential(
-            convolutional_layer(input_channels=RGB_channels, output_channels=32),
-            convolutional_layer(input_channels=32, output_channels=64),
-            convolutional_layer(input_channels=64, output_channels=128),
-            convolutional_layer(input_channels=128, output_channels=256)
+            convolutional_layer(input_channels=RGB_channels, output_channels=32, pool=False ,dropout=0),
+            convolutional_layer(input_channels=32, output_channels=64, pool=True, dropout=0),
+            convolutional_layer(input_channels=64, output_channels=128, pool=True, dropout=0.1),
+            convolutional_layer(input_channels=128, output_channels=256, pool=True, dropout=0.3),
+            convolutional_layer(input_channels=256, output_channels=512, pool=True, dropout=0.5)
         )
 
         flattened_size = get_flattened_size(self.convolutional_layers)
 
         self.fully_connected_layers = nn.Sequential(
             nn.Flatten(),
-            fully_connected_layer(flattened_size, 128),
+            fully_connected_layer(input_features=flattened_size, output_features=256, dropout=True),
+            fully_connected_layer(input_features=256, output_features=128, dropout=True),
             nn.Linear(128, image_classes)
         )
 

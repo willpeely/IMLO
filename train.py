@@ -1,20 +1,23 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.optim.lr_scheduler as schedular
+import torch.optim.lr_scheduler as scheduler
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from CNN import CNN
+import time
 
 # Configuration variables
 device = torch.device("cpu")
-batch_size = 64
-epochs = 10
+batch_size = 128
+epochs = 50
 model_path = "model.pth"
 
 # Defining the training transform
 transform = transforms.Compose([
+    transforms.ColorJitter(0.2,0.2,0.2,0.1),    #Adding colour augmentation
+    transforms.RandomRotation(10),  # Adding random rotation
     transforms.RandomHorizontalFlip(),  # Adding random horiziontal flip
     transforms.RandomCrop(32, padding=4),   # Adding random crop
     transforms.ToTensor(),
@@ -23,7 +26,7 @@ transform = transforms.Compose([
 
 # Getting the CIFAR10 dataset
 train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8)
 
 # Initializing our model
 model = CNN().to(device)
@@ -33,13 +36,31 @@ loss_function = nn.CrossEntropyLoss()
 
 # Defining our optimizer function
 optimizer_function = optim.Adam(model.parameters(), lr=0.001)
+#optimizer_function = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
 
 # Defining our schedular function
-schedular_function = schedular.StepLR(step_size=2, gamma=0.5, optimizer=optimizer_function)
+#scheduler_function = scheduler.StepLR(step_size=30, gamma=0.1, optimizer=optimizer_function)
+
+scheduler_function = scheduler.ReduceLROnPlateau(
+    optimizer=optimizer_function,
+    mode='max',              
+    factor=0.1,              
+    patience=4,             
+    threshold=0.005,        # minimum change to qualify as improvement
+    cooldown=0,              
+    min_lr=1e-6,            
+)
 
 # Used to train the data
 def train():
+    training_time = time.time()
     for epoch in range(epochs): # Iterate through each epoch
+
+        start_time = time.time()    # Used to keep track of time
+
+        # Used to calculate epoch accuracy
+        total = 0
+        correct = 0
 
         total_loss = 0.0    # Used to keep track of the loss for the epoch
 
@@ -59,12 +80,21 @@ def train():
 
             total_loss += loss.item()   # Add to the total loss
 
-        print(f"Epoch - {epoch+1}/{epochs},  Loss - {total_loss/len(train_loader):.6f}")
+            # To compute the accuracy at each epoch
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+        
+        accuracy = correct / total * 100
+        epoch_time = time.time() - start_time
 
-        schedular_function.step()   # Step the schedular function
+        print(f"Epoch - {epoch+1}/{epochs}\nLoss - {total_loss/len(train_loader):.6f}\nAccuracy - {accuracy:.2f}%\nTime - {epoch_time:.2f}s\n")
 
-# Train the neural network
-train() 
+        scheduler_function.step(accuracy)   # Step the schedular function
 
-# Save the neural network
-torch.save(model.state_dict(), model_path)  
+    total_time = time.time() - training_time
+    print(f"Training Time: {total_time/60}m")
+
+if __name__ == "__main__":
+    train() 
+    torch.save(model.state_dict(), model_path)
