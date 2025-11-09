@@ -3,35 +3,415 @@
 <head>
   <meta charset="UTF-8">
   <title>CNN Classification Model</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 20px; }
-    h1 { text-align: center; }
-    a { color: #0366d6; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    code { background: #f6f8fa; padding: 2px 4px; border-radius: 3px; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
+
+
 <body>
-  <h1>CNN Image Classification Model</h1>
+  <main>
 
-  <p>This project implements a convolutional neural network (CNN) for image classification using PyTorch.</p>
+    <header>
+    <h1>CNN Image Classification Model</h1>
+    </header>
 
-  <h2>Repository Files</h2>
-  <ul>
-    <li><a href="CNN.py">CNN.py</a> - CNN architecture</li>
-    <li><a href="train.py">train.py</a> - Training script</li>
-    <li><a href="test.py">test.py</a> - Testing script</li>
-    <li><a href="model.pth">model.pth</a> - Saved model weights</li>
-    <li><a href="README.md">README.md</a> - Project description</li>
-  </ul>
+    <div class="links">
+      <a href="CNN.py" class="code-link">CNN.py</a>
+      <a href="train.py" class="code-link">train.py</a>
+      <a href="test.py" class="code-link">test.py</a>
+      <a href="model.pth" class="code-link">model.pth</a>
+    </div>
 
-  <h2>Results</h2>
-  <p>Training Accuracy: <strong>82.10%</strong></p>
-  <p>Test Accuracy: <strong>87.21%</strong></p>
+    <div class="results">
+      <h2>Results</h2>
+      <p>Training Accuracy - 82.10%</p>
+      <p>Test Accuracy - 87.21%</p>
 
-  <h2>How to Use</h2>
-  <p>Clone the repository and run <code>train.py</code> to train the model, or <code>test.py</code> to test it using the saved <code>model.pth</code>.</p>
+    <section class="code-section">
 
-  <p><a href="https://github.com/your-username/your-repository">View on GitHub</a></p>
+      <div class="code-header">
+        <h2>CNN.py</h2>
+        <p>This CNN model is designed for image classification tasks. It consists of multiple convolutional layers followed by fully connected layers. The model uses ReLU activation functions, batch normalization, max pooling, and dropout for regularization.</p>
+      </div>
+
+      <div class="collapsible-container">
+        <button class="collapsible">Click to Expand/Collapse Code</button>
+      <div class="code-block">
+        <pre><code>
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torchvision.transforms as tranforms
+from torch.utils.data import DataLoader
+import time
+
+# Setting the variables for convolutional layers
+convolutional_kernel_size = 3    
+convolutional_stride = 1
+convolutional_padding = 1
+convolutional_activation = nn.ReLU()
+convolutional_pool = nn.MaxPool2d(kernel_size=2, stride=2)
+
+# Used to create a convolutional layer with defined input and output channels
+def convolutional_layer(input_channels, output_channels, pool=True, dropout=0):
+    """ Returns a convolutional layer.
+
+    Args:
+        input_channels (int): The number of inputs into the layer.
+        output_channels (int): The number of outputs the layer produces.
+        pool (bool, optional): If True the convolutional layer will use pooling. 
+        Defaults to True.
+    """
+    layers = [
+        nn.Conv2d(
+            in_channels=input_channels, 
+            out_channels=output_channels,
+            kernel_size=convolutional_kernel_size,
+            stride=convolutional_stride,
+            padding=convolutional_padding
+        ),
+
+        nn.BatchNorm2d(
+            num_features=output_channels
+        ),
+
+        convolutional_activation
+    ]
+    if pool:
+        layers.append(convolutional_pool)
+    if dropout > 0:
+        layers.append(nn.Dropout2d(dropout))
+
+    return nn.Sequential(*layers)
+
+# fully connected variables
+fully_connected_activation = nn.ReLU()
+fully_connected_dropout = nn.Dropout(0.5)
+
+# Used to create a fully connected layer with defined input and output features
+def fully_connected_layer(input_features, output_features, dropout=True):
+    """ Returns a fully connected layer.
+
+    Args:
+        input_features (int): The number of inputs into the layer.
+        output_features (int): The number of outputs produced by the layer.
+        dropout (bool, optional): If true the fully connected layer will use dropout. 
+        Defaults to True.
+    """
+    layers = [
+        nn.Linear(
+            in_features=input_features, 
+            out_features=output_features
+        ),
+        fully_connected_activation
+    ]
+    if dropout:
+        layers.append(fully_connected_dropout)
+
+    return nn.Sequential(*layers)
+
+# Used to get the flattened size after going through convolutional layers
+def get_flattened_size(convolutional_layers):
+    dummy = torch.zeros(1, 3, 32, 32)  
+    conv_output = convolutional_layers(dummy)
+    flattened_size = conv_output.view(1, -1).size(1)
+
+    return flattened_size
+
+# Data variables
+image_size = 32
+RGB_channels = 3
+image_classes = 10
+
+# Convolutional neural network class
+class CNN(nn.Module):
+    def __init__(self):
+        super(CNN, self).__init__()
+
+        self.convolutional_layers = nn.Sequential(
+
+            convolutional_layer(
+              input_channels=RGB_channels, 
+              output_channels=32, 
+              pool=False, 
+              dropout=0
+              ),
+
+            convolutional_layer(
+              input_channels=32, 
+              output_channels=64, 
+              pool=True, 
+              dropout=0
+              ),
+
+            convolutional_layer(
+              input_channels=64, 
+              output_channels=128, 
+              pool=True, 
+              dropout=0.1
+              ),
+
+            convolutional_layer(
+              input_channels=128, 
+              output_channels=256, 
+              pool=True, 
+              dropout=0.3
+              ),
+
+            convolutional_layer(
+              input_channels=256, 
+              output_channels=512, 
+              pool=True, 
+              dropout=0.5
+              )
+        )
+
+        flattened_size = get_flattened_size(self.convolutional_layers)
+
+        self.fully_connected_layers = nn.Sequential(
+            nn.Flatten(),
+
+            fully_connected_layer(
+              input_features=flattened_size, 
+              output_features=256, 
+              dropout=True
+              ),
+
+            fully_connected_layer(
+              input_features=256, 
+              output_features=128, 
+              dropout=True
+              ),
+
+            nn.Linear(128, image_classes)
+        )
+
+    def forward(self, x):
+        x = self.convolutional_layers(x)
+        x = self.fully_connected_layers(x)
+        return x
+        </code></pre>
+      </div>
+    </section>
+
+    <section class="code-section">
+
+      <div class="code-header">
+        <h2>train.py</h2>
+        <p>This script is used to train the CNN model defined in CNN.py. It includes data loading, preprocessing, model training, validation, and saving the trained model.</p>
+      </div>
+
+      <div class="collapsible-container">
+        <button class="collapsible">Click to Expand/Collapse Code</button>
+      <div class="code-block">
+        <pre><code>
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.optim.lr_scheduler as scheduler
+import torchvision
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader, random_split
+from CNN import CNN
+import time
+
+# Configuration variables
+device = torch.device("cpu")
+batch_size = 128
+epochs = 70
+model_path = "model.pth"
+
+# Defining the training transform
+train_transform = transforms.Compose([
+    transforms.ColorJitter(0.2,0.2,0.2,0.1),    #Adding colour augmentation
+    transforms.RandomRotation(10),  # Adding random rotation
+    transforms.RandomHorizontalFlip(),  # Adding random horiziontal flip
+    transforms.RandomCrop(32, padding=4),   # Adding random crop
+    transforms.ToTensor(),
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+])
+
+val_transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+])
+
+full_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True)
+
+val_size = int(0.1 * len(full_dataset))
+train_size = len(full_dataset) - val_size
+train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+
+train_dataset.dataset = torchvision.datasets.CIFAR10(
+  root='./data', 
+  train=True, 
+  transform=train_transform
+  )
+
+val_dataset.dataset = torchvision.datasets.CIFAR10(
+  root='./data', 
+  train=True, 
+  transform=val_transform
+  )
+
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+
+# Initializing our model
+model = CNN().to(device)
+
+# Defining our loss function
+loss_function = nn.CrossEntropyLoss()
+
+# Defining our optimizer function
+optimizer_function = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
+#optimizer_function = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
+
+# Defining our schedular function
+#scheduler_function = scheduler.StepLR(step_size=30, gamma=0.1, optimizer=optimizer_function)
+
+scheduler_function = scheduler.ReduceLROnPlateau(
+    optimizer=optimizer_function,
+    mode='max',              
+    factor=0.1,              
+    patience=4,             
+    threshold=0.002,        # minimum change to qualify as improvement
+    cooldown=0,              
+    min_lr=1e-6,            
+)
+
+def evaluate(loader):
+    model.eval()
+    correct = total = 0
+    with torch.no_grad():
+        for images, labels in loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+    model.train()
+    return 100 * correct / total
+
+
+# Used to train the data
+def train():
+    training_time = time.time()
+    for epoch in range(epochs): # Iterate through each epoch
+
+        start_time = time.time()    # Used to keep track of time
+
+        # Used to calculate epoch accuracy
+        total = 0
+        correct = 0
+
+        total_loss = 0.0    # Used to keep track of the loss for the epoch
+
+        for images, labels in train_loader: # Iterate through each image and corresponding label
+
+            images, labels = images.to(device), labels.to(device)
+
+            optimizer_function.zero_grad()  # Zero the gradient of the optimizer function
+
+            outputs = model(images) # Get the outputs caluclated 
+
+            loss = loss_function(outputs, labels)   # Caluclate the loss of the epoch
+
+            loss.backward() #Backpropagate 
+
+            optimizer_function.step()   # Update the weights 
+
+            total_loss += loss.item()   # Add to the total loss
+
+            # To compute the accuracy at each epoch
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+        
+        accuracy = correct / total * 100
+        epoch_time = time.time() - start_time
+        val_accuracy = evaluate(val_loader)
+
+        print(f"Epoch - {epoch+1}/{epochs}\nLoss - {total_loss/len(train_loader):.6f}\n"
+              f"Accuracy - {accuracy:.2f}%\n"
+              f"Validation Accuracy - {val_accuracy:.2f}%\n"
+              f"Time - {epoch_time:.2f}s\n")
+
+        scheduler_function.step(val_accuracy)   # Step the schedular function
+
+    total_time = time.time() - training_time
+    print(f"Training Time: {total_time/60:.2f}m")
+
+if __name__ == "__main__":
+    train() 
+    torch.save(model.state_dict(), model_path)
+
+        </code></pre>
+      </div>
+    </section>
+
+    <section class="code-section">
+
+      <div class="code-header">
+        <h2>test.py</h2>
+        <p>This test script is used to see how good the model is at classifying images from unseen data, a result higher than the training accuracy means the model slighty overfit the training data</p>
+      </div>
+      
+      <div class="collapsible-container">
+        <button class="collapsible">Click to Expand/Collapse Code</button>
+      <div class="code-block">
+        <pre><code>
+import torch
+import torchvision
+import torchvision.transforms as transforms
+from CNN import CNN
+
+device = torch.device("cpu")
+
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))
+])
+
+# Getting the CIFAR10 dataset
+test_dataset = torchvision.datasets.CIFAR10(
+  root='./data', 
+  train=False, 
+  download=True, 
+  transform=transform
+  )
+
+test_loader = torch.utils.data.DataLoader(
+  test_dataset, 
+  batch_size=64, 
+  shuffle=False
+  )
+
+model = CNN()
+
+# Load trained model weights
+model.load_state_dict(torch.load("model.pth"))
+model.eval()
+
+# Evaluating the model on the test data
+correct = 0
+total = 0
+
+with torch.no_grad():
+    for images, labels in test_loader:
+        images, labels = images.to(device), labels.to(device)
+        outputs = model(images)
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+test_accuracy = 100 * correct / total
+print(f"Test Accuracy - {test_accuracy:.2f}%")
+        </code></pre>
+      </div>
+    </section>
+
+  </main>
 </body>
+
+<script src="script.js"></script>
 </html>

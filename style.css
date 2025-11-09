@@ -1,0 +1,110 @@
+body { 
+    background-color: var(--background-colour);
+    font-family: Arial, sans-serif; 
+    max-width: 800px; 
+    margin: auto; 
+    padding: 100px; 
+}
+
+:root {
+    --background-colour: #f0f8ff;
+    --main-background-colour: #ffffff;
+    --main-text-colour: #2c3e50;
+    --links-colour: #3498db;
+    --code-section-colour: #e6f2ff;
+    --code-section-hover-colour: #cce6ff;
+    --code-header-colour: #2980b9;
+    --code-header-block-colour: #e6f2ff;
+    --code-header-description-colour: #555555;
+    --collapsible-block-colour: #cce6ff;
+    --collapsible-text-colour: #2c3e50;
+    --code-block-colour: #f0f8ff;
+    --code-text-colour: #2c3e50;
+}
+
+main{
+    color: var(--main-text-colour);
+    background-color: var(--main-background-colour);
+    padding: 20px 60px 30px 30px;
+    border-radius: 15px;
+}
+
+.code-section{
+    width: 100%;
+    background-color: var(--code-section-colour);
+    padding: 5px 15px 10px 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+}
+
+.collapsible {
+    border-radius: 5px;
+    background-color: var(--collapsible-block-colour);
+    color: var(--collapsible-text-colour);
+    cursor: pointer;
+    padding: 10px 15px;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 16px;
+    width: 100%;
+}
+
+.collapsible:after {
+    content: '\25BC';
+    float: right;
+}
+
+.collapsible.active:after {
+    content: '\25B2'; 
+}
+
+.code-block {
+    border-radius: 5px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background-color: var(--code-block-colour);
+    padding: 0 15px;
+  
+}
+
+.code-section:hover {
+    box-shadow: 0 0 10px var(--code-section-hover-colour);
+}
+
+
+pre code {
+    color: var(--code-text-colour);
+    display: block;
+    padding: 10px;
+    overflow-x: auto;
+}
+
+.code-header {
+    background-color: var(--code-header-block-colour);
+    border-radius: 8px;       
+    padding: 1px 10px 10px 10px;            
+    margin: 20px 0;     
+    font-size: 14px;
+}
+
+.code-header h2 {
+    color: var(--code-header-colour);
+}
+
+.code-header p {
+    color: var(--code-header-description-colour);
+    margin-top: -10px;
+}
+
+.links a {
+    color: var(--links-colour);
+    text-decoration: none;
+    margin-right: 15px;
+    
+}
+
+.links a:hover {
+    text-decoration: underline;
+}
